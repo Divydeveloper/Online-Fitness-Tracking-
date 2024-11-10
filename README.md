@@ -89,6 +89,10 @@ The application supports two main user types:
 - **Challenge History**: A list of past challenges and results.
 
 ---
+## How to Run
+-**Once all the files are properly downloaded in your system.
+-**Run the database file to create database.
+-**At last run FitnessApp.java.
 
 ## Copyright
 
