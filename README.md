@@ -20,7 +20,7 @@ An online fitness tracking application helps users monitor and manage various as
 - **Nutritional Tracking:** Log meals and monitor calorie intake (if applicable).
 - **Goal Setting:** Set fitness goals and track progress towards achieving them.
 - **Community and Sharing:** Connect with friends or share achievements for motivation (if available).
---
+  
 ## Admin Functionalities:
 
 - **User Management:** Add, edit, or remove users and manage user profiles.
