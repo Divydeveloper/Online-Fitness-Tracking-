@@ -1,85 +1,115 @@
-import java.sql.Connection;
-import java.sql.Date;
-import java.sql.SQLException;
-import java.util.List;
+import java.sql.*;
 import java.util.Scanner;
 
 public class FitnessApp {
-    public static void main(String[] args) {
-        try (Connection connection = DatabaseConnection.getConnection()) {
-            WorkoutDAO workoutDAO = new WorkoutDAOImpl(connection);
-            Scanner scanner = new Scanner(System.in);
+	private static int loggedInUserId = -1;
+	private static boolean validateUser(String name, String password) {
+        boolean isValid = false;
 
-            while (true) {
-                System.out.println("\nFitness Tracker Menu:");
-                System.out.println("1. Add Workout");
-                System.out.println("2. View All Workouts");
-                System.out.println("3. Update Workout");
-                System.out.println("4. Delete Workout");
-                System.out.println("5. Exit");
+        try {
+            // Establish database connection
+            Connection connection = DatabaseConnection.getConnection();
 
-                int choice = scanner.nextInt();
-                scanner.nextLine();
+            // Prepare the SQL query to check the user's credentials
+            String sql = "SELECT * FROM users WHERE name = ? AND password = ?";
+            PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setString(1, name);
+            statement.setString(2, password);
 
-                switch (choice) {
-                    case 1:
-                        System.out.println("Enter workout type:");
-                        String type = scanner.nextLine();
-                        System.out.println("Enter duration in minutes:");
-                        int duration = scanner.nextInt();
-                        System.out.println("Enter calories burned:");
-                        int calories = scanner.nextInt();
-                        scanner.nextLine();
-                        System.out.println("Enter date (YYYY-MM-DD):");
-                        Date date = Date.valueOf(scanner.nextLine());
+            // Execute the query
+            ResultSet resultSet = statement.executeQuery();
 
-                        Workout workout = new Workout(type, duration, calories, date);
-                        workoutDAO.addWorkout(workout);
-                        System.out.println("Workout added.");
-                        break;
-
-                    case 2:
-                        List<Workout> workouts = workoutDAO.getAllWorkouts();
-                        workouts.forEach(w -> System.out.println(w.toString()));
-                        break;
-
-                    case 3:
-                        System.out.println("Enter workout ID to update:");
-                        int updateId = scanner.nextInt();
-                        scanner.nextLine();
-                        System.out.println("Enter new workout type:");
-                        String newType = scanner.nextLine();
-                        System.out.println("Enter new duration:");
-                        int newDuration = scanner.nextInt();
-                        System.out.println("Enter new calories burned:");
-                        int newCalories = scanner.nextInt();
-                        scanner.nextLine();
-                        System.out.println("Enter new date (YYYY-MM-DD):");
-                        Date newDate = Date.valueOf(scanner.nextLine());
-
-                        Workout updatedWorkout = new Workout(newType, newDuration, newCalories, newDate);
-                        updatedWorkout.setId(updateId);
-                        workoutDAO.updateWorkout(updatedWorkout);
-                        System.out.println("Workout updated.");
-                        break;
-
-                    case 4:
-                        System.out.println("Enter workout ID to delete:");
-                        int deleteId = scanner.nextInt();
-                        workoutDAO.deleteWorkout(deleteId);
-                        System.out.println("Workout deleted.");
-                        break;
-
-                    case 5:
-                        System.out.println("Exiting.");
-                        return;
-
-                    default:
-                        System.out.println("Invalid choice.");
-                }
+            // Check if any record was returned
+            if (resultSet.next()) {
+                isValid = true;
+                loggedInUserId = resultSet.getInt("id");
             }
-        } catch (SQLException e) {
+
+            // Close resources
+            resultSet.close();
+            statement.close();
+            connection.close();
+        } catch (Exception e) {
             e.printStackTrace();
+        }
+
+        return isValid;
+    }
+    public static void main(String[] args) {
+        
+    	try (Connection connection = DatabaseConnection.getConnection()){
+	        AdminDAO adminService = new AdminDAOImpl(connection);
+	    	Scanner scanner = new Scanner(System.in);
+	
+	        System.out.println("Welcome to the Fitness Tracker App!");
+	        System.out.println("Press 1 for Admin functions");
+	        System.out.println("Press 2 for User functions");
+	
+	        int choice = scanner.nextInt();
+	        scanner.nextLine();
+	
+	        if(choice==1) {
+	                // Go to Admin functionality
+	            	System.out.print("Enter your username: ");
+	                String inputUsername = scanner.nextLine();
+	                System.out.print("Enter your password: ");
+	                String inputPassword = scanner.nextLine();
+	                // Check if the entered credentials match
+	                if (inputUsername.equals("Admin") && inputPassword.equals("Admin1234")) {
+	                    System.out.println("Login successful! Welcome!");
+	                    AdminApp admin = new AdminApp();
+	                    admin.main(new String[] {}); 
+	
+	                } else {
+	                    System.out.println("Invalid username or password. Please try again."+inputUsername+inputPassword);
+	                }
+	        }else if(choice==2) {
+	                // Go to User functionality
+	            	System.out.println("Welcome to the Fitness Tracker App!");
+	                System.out.println("Press 1 for Sign up");
+	                System.out.println("Press 2 for Login");
+	                
+	                int user_choice = scanner.nextInt();
+	                scanner.nextLine();
+	                switch (user_choice) {
+	                    case 1:
+	                    	System.out.print("Enter name: ");
+		                    String name = scanner.nextLine();
+		                    System.out.print("Enter email: ");
+		                    String email = scanner.nextLine();
+		                    System.out.print("Enter password: ");
+		                    String pass = scanner.nextLine();
+		                    loggedInUserId=adminService.createUser(name, email, pass);
+		                    
+		                    User user = new User();
+		                    user.main(new int[] {loggedInUserId}); 
+		                    break;
+	                    case 2:
+			            	System.out.print("Enter your username: ");
+			                String Username = scanner.nextLine();
+			                System.out.print("Enter your password: ");
+			                String Password = scanner.nextLine();
+			                // Check if the entered credentials match
+			                if (validateUser(Username, Password)) {
+			                    System.out.println("Login successful! Welcome!");
+			                    User users = new User();
+			                    users.main(new int[] {loggedInUserId}); 
+			                    break;
+			
+			                } else {
+			                    System.out.println("Invalid username or password. Please try again.");
+			                    break;
+			                }
+	                    default:
+	    	                System.out.println("Invalid choice. Please press 1 or 2.");
+	                }
+	        }else {
+	                System.out.println("Invalid choice. Please press 1 or 2.");
+	        }
+	
+	        scanner.close();
+        }catch(SQLException e) {
+        	e.printStackTrace();
         }
     }
 }
